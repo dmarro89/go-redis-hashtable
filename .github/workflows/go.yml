@@ -20,11 +20,11 @@ jobs:
           cache-dependency-path: ../../go.sum
       - name: Install dependencies
         run: |
-          go get .
+          go get ./...
       - name: Build
         run: go build -v ./...
       - name: Test with the Go CLI
-        run: go test -json > TestResults.json
+        run: go test -v -json ./... > TestResults.json
       - name: Upload Go test results
         uses: actions/upload-artifact@v3
         with:
