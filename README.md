@@ -59,7 +59,7 @@ Here's some interesting links to read about Redis hashmap.
 
 The `Dict` struct is the main struct of the project, named after the Redis data structure. It closely follows the Redis model with key components:
 
-- `HashTable[2]`: The `Dict` struct contains two hash tables: a main Table (index 0) and a rehashing table (index 1). Usually, items are stored in the main hashtable, and the rehashing one is used during the expanding and rehashing process.
+- `HashTable[2]`: The `Dict` struct contains two hash tables: a main table (index 0) and a rehashing table (index 1). Usually, items are stored in the main hashtable, and the rehashing one is used during the expanding and rehashing process.
 
 - `DictEntry`: Each hashtable has a linked list of `DictEntry`. Each `DictEntry` has a key, a value, and a pointer to the next element.
 
@@ -67,7 +67,7 @@ The `Dict` struct is the main struct of the project, named after the Redis data 
 
 The `Set` operation is responsible for adding a key-value pair to the hashtable. It determines the index using the SipHash algorithm and stores the element in the main table at the specified index. If multiple key/value pairs share the same index, the hashtable utilizes a linked list to manage collisions.
 
-The `Get`` operation retrieves an entry based on the provided key. It considers potential collisions and rehashing if necessary, returning the corresponding value.
+The `Get` operation retrieves an entry based on the provided key. It considers potential collisions and rehashing if necessary, returning the corresponding value.
 
 The `Delete` operation removes an entry from the hashtable based on the specified key, maintaining the integrity of the hashtable structure.
 
@@ -121,6 +121,8 @@ Benchmarking tests were conducted to evaluate the performance of the Golang Redi
 
 The benchmark results provide insights into the execution time and resource utilization of the hashtable.
 
-BenchmarkSet-12       	 1000000	      1439 ns/op	     515 B/op	       7 allocs/op
-BenchmarkGet-12       	 1251398	       999.9 ns/op	     287 B/op	       4 allocs/op
-BenchmarkDelete-12    	 1000000	      1174 ns/op	     312 B/op	       5 allocs/op
+| Benchmar                   | Num. Op.       |   Time           |     Mem         |     Mem.Op.      |
+| -------------------------- |:--------------:|:----------------:|:---------------:|:-----------:|
+| BenchmarkSet-12       	 | 1000000	      | 1439 ns/op	     | 515 B/op	       | 7 allocs/op |
+| BenchmarkGet-12       	 | 1251398	      | 999.9 ns/op	     | 287 B/op	       | 4 allocs/op |
+| BenchmarkDelete-12    	 | 1000000	      | 1174 ns/op	     | 312 B/op	       | 5 allocs/op |
