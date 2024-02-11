@@ -2,10 +2,11 @@ package test
 
 import (
 	"fmt"
-	"go-redis-hashtable/src/datastr"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/dmarro89/go-redis-hashtable/src/datastr"
 
 	"github.com/stretchr/testify/assert"
 )

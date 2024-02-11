@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"go-redis-hashtable/src/datastr"
+
+	"github.com/dmarro89/go-redis-hashtable/src/datastr"
 )
 
 func main() {
