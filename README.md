@@ -120,9 +120,15 @@ func main() {
 Benchmarking tests were conducted to evaluate the performance of the Golang Redis-like hashtable implementation in various scenarios.
 
 The benchmark results provide insights into the execution time and resource utilization of the hashtable.
+The BenchmarkSet,BenchmarkGet and BenchmarkDelete are referring to the hashtable implementation of the project while the GoMap ones are referring to the native golang implementation.
 
-| Benchmar                   | Num. Op.       |   Time           |     Mem         |     Mem.Op.      |
+| Benchmar                   | Num. Op.       |   Time           |     Mem         |     Mem.Op. |
 | -------------------------- |:--------------:|:----------------:|:---------------:|:-----------:|
-| BenchmarkSet-12       	 | 1000000	      | 1439 ns/op	     | 515 B/op	       | 7 allocs/op |
-| BenchmarkGet-12       	 | 1251398	      | 999.9 ns/op	     | 287 B/op	       | 4 allocs/op |
-| BenchmarkDelete-12    	 | 1000000	      | 1174 ns/op	     | 312 B/op	       | 5 allocs/op |
+| BenchmarkSet-4       	 	 | 582559	      | 2077 ns/op	     | 321 B/op	       | 4 allocs/op |
+| BenchmarkGet-4       	 	 | 525124	      | 1984 ns/op	     | 206 B/op	       | 2 allocs/op |
+| BenchmarkDelete-4    	 	 | 1198183	      | 1695 ns/op	     | 173 B/op	       | 2 allocs/op |
+| BenchmarkGoMapSet-4        | 684192	      | 2262 ns/op	     | 132 B/op	       | 1 allocs/op |
+| BenchmarkGoMapGet-4        | 2281518	      | 574.4 ns/op	     | 0 B/op	       | 0 allocs/op |
+| BenchmarkGoMapDelete-4     | 2994595	      | 595.4 ns/op	     | 0 B/op	       | 0 allocs/op |
+
+
