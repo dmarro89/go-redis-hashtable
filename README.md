@@ -90,7 +90,7 @@ package main
 
 import (
 	"fmt"
-	"go_db/src/datastructures"
+	"go_db/datastructures"
 )
 
 func main() {

@@ -3,7 +3,7 @@ package datastr
 import (
 	"fmt"
 
-	"github.com/dmarro89/go-redis-hashtable/src/utilities"
+	"github.com/dmarro89/go-redis-hashtable/utilities"
 
 	"github.com/dchest/siphash"
 )

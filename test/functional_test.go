@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/dmarro89/go-redis-hashtable/src/datastr"
+	"github.com/dmarro89/go-redis-hashtable/datastr"
 
 	"github.com/stretchr/testify/assert"
 )
