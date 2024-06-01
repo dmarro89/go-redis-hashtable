@@ -33,7 +33,7 @@ jobs:
           name: Go-results
           path: TestResults.json
       - name: Run benchmarks
-        run: go test -bench=. -benchmem > benchmark.txt
+        run: go test ./... -bench=. -benchmem > benchmark.txt
       - name: Display benchmark results
         run: cat benchmark.txt
       - name: Upload benchmark results
