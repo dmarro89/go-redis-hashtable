@@ -1,11 +1,11 @@
-name: Go-Develop
+name: Go-Main
 
 on:
     push:
-        branches: ['develop']
+        branches: ['main']
     pull_request:
         types: [opened, synchronize]
-        branches: ['develop']
+        branches: ['main']
 
 jobs:
   build:
@@ -32,3 +32,12 @@ jobs:
         with:
           name: coverage-report
           path: coverage.html
+      - name: Run benchmarks
+        run: go test ./... -bench=. -benchmem > benchmark.txt
+      - name: Display benchmark results
+        run: cat benchmark.txt
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark.txt
