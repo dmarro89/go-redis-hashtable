@@ -39,11 +39,13 @@ func TestKeyIndex(t *testing.T) {
 	d.mainTable().table[0] = NewDictEntry("mango", nil)
 	d.mainTable().table[0].next = NewDictEntry("orange", nil)
 
-	index := d.keyIndex("banana", []byte{1, 2, 3, 4})
-	assert.Equal(t, 3, index, "Unexpected index for nonexistent key")
+	var hexKey []byte
+	hex.Encode([]byte("banana"), hexKey)
+	index := d.keyIndex(string(hexKey), [16]byte{0, 1, 2, 3, 4})
+	assert.Equal(t, 2, index, "Unexpected index for nonexistent key")
 
 	fmt.Printf("%v", d.hashTables)
-	index = d.keyIndex("orange", []byte{1, 2, 3, 4})
+	index = d.keyIndex("orange", [16]byte{1, 2, 3, 4})
 	assert.Equal(t, -1, index, "Unexpected index for nonexistent key")
 }
 
@@ -153,7 +155,9 @@ func TestSipHashDigestWithKnownVectors(t *testing.T) {
 			t.Fatalf("failed to decode key: %v", err)
 		}
 
-		result := sipHashDigest(key, tt.message)
+		var byteArray [16]byte
+		copy(byteArray[:], key)
+		result := sipHashDigest(byteArray, tt.message)
 		if toBytes(result) != tt.expect {
 			t.Errorf("sipHashDigest(key: %v, message: %q) = %x; want %x", tt.key, tt.message, result, tt.expect)
 		}

@@ -7,7 +7,7 @@ import (
 )
 
 func TestGenerateRandomBytes(t *testing.T) {
-	generateRandomBytes(16)
+	generateRandomBytes()
 
 	assert.NotNil(t, randomBytes)
 	assert.Len(t, randomBytes, 16)
