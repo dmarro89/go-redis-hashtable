@@ -22,9 +22,8 @@ func randomString(length int) string {
 	return string(b)
 }
 
-var d = datastr.NewDict()
-
 func BenchmarkSet(b *testing.B) {
+	var d = datastr.NewDict()
 	insertedElements := make(map[string]interface{})
 	for i := 0; i < b.N; i++ {
 		key := randomString(20)
@@ -41,6 +40,8 @@ func BenchmarkSet(b *testing.B) {
 }
 
 func BenchmarkGet(b *testing.B) {
+	var d = datastr.NewDict()
+
 	insertedElements := make(map[string]interface{})
 	for i := 0; i < b.N; i++ {
 		key := randomString(20)
@@ -59,6 +60,8 @@ func BenchmarkGet(b *testing.B) {
 }
 
 func BenchmarkDelete(b *testing.B) {
+	var d = datastr.NewDict()
+
 	insertedElements := make(map[string]interface{})
 	for i := 0; i < b.N; i++ {
 		key := randomString(20)
