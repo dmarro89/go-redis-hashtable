@@ -25,8 +25,19 @@ jobs:
         run: go build -v ./...
       - name: Test with the Go CLI
         run: go test -v -json ./... > TestResults.json
+      - name: Display test results
+        run: cat TestResults.json
       - name: Upload Go test results
         uses: actions/upload-artifact@v3
         with:
           name: Go-results
           path: TestResults.json
+      - name: Run benchmarks
+        run: go test -bench=. -benchmem > benchmark.txt
+      - name: Display benchmark results
+        run: cat benchmark.txt
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: benchmark.txt
