@@ -1,6 +1,8 @@
 package datastr
 
 import (
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -110,10 +112,52 @@ func TestNextPower(t *testing.T) {
 	assert.Equal(t, int64(16), size, "Unexpected next power of 2 for an already power of 2 input")
 }
 
-func TestSipHashDigest(t *testing.T) {
-	randomBytes := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
-	hash := sipHashDigest(randomBytes, "test_key_1_2_3_4")
-	assert.NotZero(t, hash, "Unexpected SIP hash digest")
+func toBytes(data uint64) string {
+	dataBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(dataBytes, uint64(data))
+	return hex.EncodeToString(dataBytes)
+}
+
+func TestSipHashDigestWithKnownVectors(t *testing.T) {
+	// Known test vectors
+	tests := []struct {
+		key     string
+		message string
+		expect  string
+	}{
+		{
+			key:     "000102030405060708090a0b0c0d0e0f",
+			message: "",
+			expect:  "310e0edd47db6f72",
+		},
+		{
+			key:     "000102030405060708090a0b0c0d0e0f",
+			message: "00",
+			expect:  "fd67dc93c539f874",
+		},
+		{
+			key:     "000102030405060708090a0b0c0d0e0f",
+			message: "000102030405060708090a0b0c0d0e0f",
+			expect:  "db9bc2577fcc2a3f",
+		},
+		{
+			key:     "000102030405060708090a0b0c0d0e0f",
+			message: "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e",
+			expect:  "724506eb4c328a95",
+		},
+	}
+
+	for _, tt := range tests {
+		key, err := hex.DecodeString(tt.key)
+		if err != nil {
+			t.Fatalf("failed to decode key: %v", err)
+		}
+
+		result := sipHashDigest(key, tt.message)
+		if toBytes(result) != tt.expect {
+			t.Errorf("sipHashDigest(key: %v, message: %q) = %x; want %x", tt.key, tt.message, result, tt.expect)
+		}
+	}
 }
 
 func TestAdd(t *testing.T) {
@@ -181,9 +225,9 @@ func TestRehash(t *testing.T) {
 func TestRehashing(t *testing.T) {
 	d := NewDict()
 
-	assert.False(t, d.rehashing(), "Unexpected rehashing status when rehashing is false")
+	assert.False(t, d.isRehashing(), "Unexpected rehashing status when rehashing is false")
 	d.rehashidx = 0
-	assert.True(t, d.rehashing(), "Unexpected rehashing status when rehashing is true")
+	assert.True(t, d.isRehashing(), "Unexpected rehashing status when rehashing is true")
 }
 
 func TestGetEntry(t *testing.T) {

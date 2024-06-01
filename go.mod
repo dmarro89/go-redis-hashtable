@@ -1,6 +1,6 @@
 module github.com/dmarro89/go-redis-hashtable
 
-go 1.21.5
+go 1.22.3
 
 require (
 	github.com/dchest/siphash v1.2.3
