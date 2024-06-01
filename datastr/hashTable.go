@@ -3,7 +3,7 @@ package datastr
 type HashTable struct {
 	table    []*DictEntry
 	size     int64
-	sizemask int64
+	sizemask uint64
 	used     int64
 }
 
@@ -15,12 +15,12 @@ type HashTable struct {
 // Returns:
 // - *HashTable: a pointer to the newly created HashTable.
 func NewHashTable(size int64) *HashTable {
-	var sizemask int64
+	var sizemask uint64
 	table := []*DictEntry{}
 
 	if size > 0 {
 		table = make([]*DictEntry, size)
-		sizemask = size - 1
+		sizemask = uint64(size - 1)
 	}
 
 	return &HashTable{
