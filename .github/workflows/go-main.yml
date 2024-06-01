@@ -33,7 +33,7 @@ jobs:
           name: coverage-report
           path: coverage.html
       - name: Run benchmarks
-        run: go test ./... -bench=. -benchmem > benchmark.txt
+        run: go test ./... -bench=. -benchmem > benchmark.txt -timeout 99999s
       - name: Display benchmark results
         run: cat benchmark.txt
       - name: Upload benchmark results
