@@ -201,13 +201,12 @@ func TestRehash(t *testing.T) {
 	d := NewDict()
 
 	//Not rehashing
-	result := d.rehash(1)
-	assert.Zero(t, result, "Unexpected result when not rehashing")
+	d.rehash(1)
+	assert.Equal(t, d.rehashidx, -1)
 
 	// Test rehashing an empty main table
 	d.rehashidx = 0
-	result = d.rehash(1)
-	assert.Zero(t, result, "Unexpected result when rehashing an empty table")
+	d.rehash(1)
 	assert.Equal(t, d.rehashidx, -1)
 
 	//Rehashing last element from rehashing table
@@ -216,8 +215,7 @@ func TestRehash(t *testing.T) {
 	d.rehashingTable().table[0] = NewDictEntry("key-test", "value-test")
 	d.add("key1", "value1")
 	d.rehashidx = 0
-	result = d.rehash(1)
-	assert.Zero(t, result, "Unexpected result when rehashing an empty table")
+	d.rehash(1)
 	assert.Equal(t, d.rehashidx, -1)
 	assert.Equal(t, d.mainTable().table[0].key, "key1")
 	assert.Equal(t, d.mainTable().table[0].value, "value1")

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"sync"
 
 	"github.com/dmarro89/go-redis-hashtable/utilities"
 
@@ -18,6 +19,7 @@ const (
 type Dict struct {
 	hashTables [2]*HashTable
 	rehashidx  int
+	mu         sync.Mutex
 }
 
 // NewDict returns a new instance of Dict.
@@ -182,7 +184,11 @@ func (d *Dict) add(key string, value interface{}) error {
 
 	hashTable := d.mainTable()
 	if d.isRehashing() {
-		hashTable = d.rehashingTable()
+		d.rehashStep()
+		hashTable = d.mainTable()
+		if d.isRehashing() {
+			hashTable = d.rehashingTable()
+		}
 	}
 
 	entry := hashTable.table[index]
@@ -205,8 +211,8 @@ func (d *Dict) add(key string, value interface{}) error {
 //
 // No parameters.
 // Returns an integer.
-func (d *Dict) rehashStep() int {
-	return d.rehash(1)
+func (d *Dict) rehashStep() {
+	d.rehash(1)
 }
 
 // rehash rehashes the dictionary with a new size.
@@ -214,10 +220,10 @@ func (d *Dict) rehashStep() int {
 // n is the new size of the dictionary.
 // Returns 0 if the rehashing is not in progress.
 // Returns 1 if the rehashing is in progress.
-func (d *Dict) rehash(n int) int {
+func (d *Dict) rehash(n int) {
 	emptyVisits := n * 10
 	if !d.isRehashing() {
-		return 0
+		return
 	}
 
 	for n > 0 && d.mainTable().used != 0 {
@@ -229,7 +235,7 @@ func (d *Dict) rehash(n int) int {
 			d.rehashidx++
 			emptyVisits--
 			if emptyVisits == 0 {
-				return 1
+				return
 			}
 		}
 
@@ -257,10 +263,8 @@ func (d *Dict) rehash(n int) int {
 		d.hashTables[0] = d.rehashingTable()
 		d.hashTables[1] = NewHashTable(0)
 		d.rehashidx = -1
-		return 0
+		return
 	}
-
-	return 1
 }
 
 // isRehashing checks if the rehash index of the Dict struct is not equal to -1.
