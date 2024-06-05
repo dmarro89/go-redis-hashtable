@@ -130,7 +130,7 @@ func BenchmarkGet10000(b *testing.B) {
 }
 
 func BenchmarkDelete100(b *testing.B) {
-	for key := range Set100 {
+	for key, _ := range Set100 {
 		b.StartTimer()
 		err := dict100.Delete(key)
 		b.StopTimer()
@@ -139,7 +139,7 @@ func BenchmarkDelete100(b *testing.B) {
 }
 
 func BenchmarkDelete1000(b *testing.B) {
-	for key := range Set1000 {
+	for key, _ := range Set1000 {
 		b.StartTimer()
 		err := dict1000.Delete(key)
 		b.StopTimer()
@@ -148,7 +148,7 @@ func BenchmarkDelete1000(b *testing.B) {
 }
 
 func BenchmarkDelete3000(b *testing.B) {
-	for key := range Set3000 {
+	for key, _ := range Set3000 {
 		b.StartTimer()
 		err := dict3000.Delete(key)
 		b.StopTimer()
@@ -157,7 +157,7 @@ func BenchmarkDelete3000(b *testing.B) {
 }
 
 func BenchmarkDelete10000(b *testing.B) {
-	for key := range Set10000 {
+	for key, _ := range Set10000 {
 		b.StartTimer()
 		err := dict10000.Delete(key)
 		b.StopTimer()
