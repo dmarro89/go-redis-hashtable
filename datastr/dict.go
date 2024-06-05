@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"sync"
 
 	"github.com/dmarro89/go-redis-hashtable/utilities"
 
@@ -18,6 +19,7 @@ const (
 type Dict struct {
 	hashTables [2]*HashTable
 	rehashidx  int
+	mu         sync.Mutex
 }
 
 // NewDict returns a new instance of Dict.
