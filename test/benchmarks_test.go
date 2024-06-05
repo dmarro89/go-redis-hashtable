@@ -25,6 +25,7 @@ func randomString(length int) string {
 func BenchmarkSet(b *testing.B) {
 	var d = datastr.NewDict()
 	insertedElements := make(map[string]interface{})
+	fmt.Printf("Inserting elements %d times \n", b.N)
 	for i := 0; i < b.N; i++ {
 		key := randomString(20)
 		value := randomString(100)
@@ -32,10 +33,10 @@ func BenchmarkSet(b *testing.B) {
 	}
 	b.ResetTimer()
 	for key, value := range insertedElements {
+		b.StartTimer()
 		err := d.Set(key, value)
 		b.StopTimer()
 		assert.NoError(b, err, fmt.Sprintf("Error adding element {%s, %+v} to dictionary: %v", key, value, err))
-		b.StartTimer()
 	}
 }
 
@@ -50,12 +51,13 @@ func BenchmarkGet(b *testing.B) {
 		err := d.Set(key, value)
 		assert.NoError(b, err, fmt.Sprintf("Error adding element {%s, %+v} to dictionary: %v", key, value, err))
 	}
+
 	b.ResetTimer()
 	for key := range insertedElements {
+		b.StartTimer()
 		value := d.Get(key)
 		b.StopTimer()
 		assert.NotNil(b, value, fmt.Sprintf("Error getting element %s from dictionary: %v", key, value))
-		b.StartTimer()
 	}
 }
 
@@ -73,21 +75,20 @@ func BenchmarkDelete(b *testing.B) {
 	b.ResetTimer()
 
 	for key := range insertedElements {
+		b.StartTimer()
 		err := d.Delete(key)
 		b.StopTimer()
 		assert.NoError(b, err, fmt.Sprintf("Error deleting element %s from dictionary: %v", key, err))
-		b.StartTimer()
 	}
 }
 
 func BenchmarkGoMapSet(b *testing.B) {
 	insertedElements := make(map[string]interface{})
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-		key := randomString(20)
-		value := randomString(100)
 		b.StartTimer()
-		insertedElements[key] = value
+		insertedElements[randomString(20)] = randomString(100)
+		b.StopTimer()
 	}
 }
 
@@ -101,10 +102,10 @@ func BenchmarkGoMapGet(b *testing.B) {
 	b.ResetTimer()
 
 	for key := range insertedElements {
+		b.StartTimer()
 		value := insertedElements[key]
 		b.StopTimer()
 		assert.NotNil(b, value, fmt.Sprintf("Error getting element %s from dictionary: %v", key, value))
-		b.StartTimer()
 	}
 }
 
@@ -120,10 +121,10 @@ func BenchmarkGoMapDelete(b *testing.B) {
 	b.ResetTimer()
 
 	for _, value := range keys {
+		b.StartTimer()
 		delete(insertedElements, value)
 		b.StopTimer()
 		val := insertedElements[value]
 		assert.Nil(b, val, fmt.Sprintf("Error deleting element %s from dictionary", value))
-		b.StartTimer()
 	}
 }
