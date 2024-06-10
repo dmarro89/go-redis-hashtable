@@ -6,16 +6,16 @@ import (
 	"testing"
 
 	"github.com/dmarro89/go-redis-hashtable/datastr"
-
-	"github.com/stretchr/testify/assert"
 )
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+type keyValue struct{ Key, Value string }
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyz"
 const maxStringLength = 100
 
 func randomString(length int) string {
 	if length == 0 {
-		length = rand.IntN(maxStringLength)
+		length = rand.IntN(maxStringLength) + 1
 	}
 
 	b := make([]byte, length)
@@ -25,246 +25,178 @@ func randomString(length int) string {
 	return string(b)
 }
 
-var Set100 = make(map[string]interface{})
-var Set1000 = make(map[string]interface{})
-var Set3000 = make(map[string]interface{})
-var Set10000 = make(map[string]interface{})
-var dict100 = datastr.NewDict()
-var dict1000 = datastr.NewDict()
-var dict3000 = datastr.NewDict()
-var dict10000 = datastr.NewDict()
-var map100 = make(map[string]interface{})
-var map1000 = make(map[string]interface{})
-var map3000 = make(map[string]interface{})
-var map10000 = make(map[string]interface{})
+func prepareArray(n int) []keyValue {
+	arr := make([]keyValue, 0, n)
+	existing := make(map[string]bool)
+	for i := 0; i < n; i++ {
+		key := randomString(0)
+		for existing[key] {
+			key = randomString(0)
+		}
+		existing[key] = true
+		arr = append(arr, keyValue{key, randomString(0)})
+	}
+	return arr
+}
 
-func init() {
-	for i := 0; i < 100; i++ {
-		Set100[randomString(0)] = randomString(0)
-	}
-	for i := 0; i < 1000; i++ {
-		Set1000[randomString(0)] = randomString(0)
-	}
-	for i := 0; i < 3000; i++ {
-		Set3000[randomString(0)] = randomString(0)
-	}
-	for i := 0; i < 10000; i++ {
-		Set10000[randomString(0)] = randomString(0)
+func BenchmarkSet(b *testing.B) {
+	var n int
+	for _, e := range []int{1, 2, 3} {
+		n = 1
+		for i := 0; i < e; i++ {
+			n *= 10
+		}
+		b.Run(fmt.Sprintf("1e%d", e), func(b *testing.B) { benchmarkSet(b, n) })
 	}
 }
 
-func BenchmarkSet100(b *testing.B) {
+func benchmarkSet(b *testing.B, n int) {
+	array := prepareArray(n)
 	b.ResetTimer()
-	for key, value := range Set100 {
-		b.StartTimer()
-		err := dict100.Set(key, value)
-		b.StopTimer()
-		assert.NoError(b, err, fmt.Sprintf("Error adding element {%s, %+v} to dictionary: %v", key, value, err))
+	for i := 0; i < b.N; i++ {
+		d := datastr.NewDict()
+		for _, value := range array {
+			d.Set(value.Key, value.Value)
+		}
+	}
+	b.StopTimer()
+}
+
+func BenchmarkGet(b *testing.B) {
+	var n int
+	for _, e := range []int{1, 2, 3} {
+		n = 1
+		for i := 0; i < e; i++ {
+			n *= 10
+		}
+		b.Run(fmt.Sprintf("1e%d", e), func(b *testing.B) { benchmarkGet(b, n) })
 	}
 }
 
-func BenchmarkSet1000(b *testing.B) {
+func benchmarkGet(b *testing.B, n int) {
+	array := prepareArray(n)
+	d := datastr.NewDict()
+	for _, value := range array {
+		d.Set(value.Key, value.Value)
+	}
 	b.ResetTimer()
-	for key, value := range Set1000 {
-		b.StartTimer()
-		err := dict1000.Set(key, value)
-		b.StopTimer()
-		assert.NoError(b, err, fmt.Sprintf("Error adding element {%s, %+v} to dictionary: %v", key, value, err))
+	for i := 0; i < b.N; i++ {
+		for _, value := range array {
+			val := d.Get(value.Key)
+			if val != value.Value {
+				b.Fatalf("Error getting element {%s, %v} from dictionary - got {%v}", value.Key, value.Value, val)
+			}
+		}
+	}
+	b.StopTimer()
+}
+
+func BenchmarkDelete(b *testing.B) {
+	var n int
+	for _, e := range []int{1, 2, 3} {
+		n = 1
+		for i := 0; i < e; i++ {
+			n *= 10
+		}
+		b.Run(fmt.Sprintf("1e%d", e), func(b *testing.B) { benchmarkDelete(b, n) })
 	}
 }
 
-func BenchmarkSet3000(b *testing.B) {
+func benchmarkDelete(b *testing.B, n int) {
+	array := prepareArray(n)
+	d := datastr.NewDict()
+
 	b.ResetTimer()
-	for key, value := range Set3000 {
-		b.StartTimer()
-		err := dict3000.Set(key, value)
+	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		assert.NoError(b, err, fmt.Sprintf("Error adding element {%s, %+v} to dictionary: %v", key, value, err))
+		for _, value := range array {
+			d.Set(value.Key, value.Value)
+		}
+		b.StartTimer()
+		for _, value := range array {
+			if d.Delete(value.Key) != nil {
+				b.Fatalf("Error deleting element {%s} from dictionary", value.Key)
+			}
+		}
 	}
 }
 
-func BenchmarkSet10000(b *testing.B) {
+func BenchmarkGoMapSet(b *testing.B) {
+	var n int
+	for _, e := range []int{1, 2, 3} {
+		n = 1
+		for i := 0; i < e; i++ {
+			n *= 10
+		}
+		b.Run(fmt.Sprintf("1e%d", e), func(b *testing.B) { benchmarkGoMapSet(b, n) })
+	}
+}
+func benchmarkGoMapSet(b *testing.B, n int) {
+	array := prepareArray(n)
 	b.ResetTimer()
-	for key, value := range Set10000 {
-		b.StartTimer()
-		err := dict10000.Set(key, value)
-		b.StopTimer()
-		assert.NoError(b, err, fmt.Sprintf("Error adding element {%s, %+v} to dictionary: %v", key, value, err))
+	for i := 0; i < b.N; i++ {
+		m := make(map[string]interface{})
+		for _, value := range array {
+			m[value.Key] = value.Value
+		}
+	}
+	b.StopTimer()
+}
+
+func BenchmarkGoMapGet(b *testing.B) {
+	var n int
+	for _, e := range []int{1, 2, 3} {
+		n = 1
+		for i := 0; i < e; i++ {
+			n *= 10
+		}
+		b.Run(fmt.Sprintf("1e%d", e), func(b *testing.B) { benchmarkGoMapGet(b, n) })
 	}
 }
 
-func BenchmarkGet100(b *testing.B) {
-	for key, val := range Set100 {
-		b.StartTimer()
-		value := dict100.Get(key)
-		b.StopTimer()
-		assert.Equal(b, value, val, fmt.Sprintf("Error getting element %s from dictionary: %v", key, value))
+func benchmarkGoMapGet(b *testing.B, n int) {
+	array := prepareArray(n)
+	m := make(map[string]interface{})
+	for _, value := range array {
+		m[value.Key] = value.Value
 	}
-}
-
-func BenchmarkGet1000(b *testing.B) {
-	for key, val := range Set1000 {
-		b.StartTimer()
-		value := dict1000.Get(key)
-		b.StopTimer()
-		assert.Equal(b, value, val, fmt.Sprintf("Error getting element %s from dictionary: %v", key, value))
-	}
-}
-
-func BenchmarkGet3000(b *testing.B) {
-	for key, val := range Set3000 {
-		b.StartTimer()
-		value := dict3000.Get(key)
-		b.StopTimer()
-		assert.Equal(b, value, val, fmt.Sprintf("Error getting element %s from dictionary: %v", key, value))
-	}
-}
-
-func BenchmarkGet10000(b *testing.B) {
-	for key, val := range Set10000 {
-		b.StartTimer()
-		value := dict10000.Get(key)
-		b.StopTimer()
-		assert.Equal(b, value, val, fmt.Sprintf("Error getting element %s from dictionary: %v", key, value))
-	}
-}
-
-func BenchmarkDelete100(b *testing.B) {
-	for key, _ := range Set100 {
-		b.StartTimer()
-		err := dict100.Delete(key)
-		b.StopTimer()
-		assert.NoError(b, err, fmt.Sprintf("Error deleting element %s from dictionary: %v", key, err))
-	}
-}
-
-func BenchmarkDelete1000(b *testing.B) {
-	for key, _ := range Set1000 {
-		b.StartTimer()
-		err := dict1000.Delete(key)
-		b.StopTimer()
-		assert.NoError(b, err, fmt.Sprintf("Error deleting element %s from dictionary: %v", key, err))
-	}
-}
-
-func BenchmarkDelete3000(b *testing.B) {
-	for key, _ := range Set3000 {
-		b.StartTimer()
-		err := dict3000.Delete(key)
-		b.StopTimer()
-		assert.NoError(b, err, fmt.Sprintf("Error deleting element %s from dictionary: %v", key, err))
-	}
-}
-
-func BenchmarkDelete10000(b *testing.B) {
-	for key, _ := range Set10000 {
-		b.StartTimer()
-		err := dict10000.Delete(key)
-		b.StopTimer()
-		assert.NoError(b, err, fmt.Sprintf("Error deleting element %s from dictionary: %v", key, err))
-	}
-}
-
-func BenchmarkGoMapSet100(b *testing.B) {
 	b.ResetTimer()
-	for key, value := range Set100 {
-		b.StartTimer()
-		map100[key] = value
-		b.StopTimer()
+	for i := 0; i < b.N; i++ {
+		for _, value := range array {
+			if m[value.Key] != value.Value {
+				b.Fatalf("Error getting element {%s, %v} from dictionary", value.Key, value.Value)
+			}
+		}
+	}
+	b.StopTimer()
+}
+
+func BenchmarkGoMapDelete(b *testing.B) {
+	var n int
+	for _, e := range []int{1, 2, 3} {
+		n = 1
+		for i := 0; i < e; i++ {
+			n *= 10
+		}
+		b.Run(fmt.Sprintf("1e%d", e), func(b *testing.B) { benchmarkGoMapDelete(b, n) })
 	}
 }
 
-func BenchmarkGoMapSet1000(b *testing.B) {
+func benchmarkGoMapDelete(b *testing.B, n int) {
+	array := prepareArray(n)
+	m := make(map[string]interface{})
 	b.ResetTimer()
-	for key, value := range Set1000 {
-		b.StartTimer()
-		map1000[key] = value
+	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-	}
-}
-
-func BenchmarkGoMapSet3000(b *testing.B) {
-	b.ResetTimer()
-	for key, value := range Set3000 {
+		for _, value := range array {
+			m[value.Key] = value.Value
+		}
 		b.StartTimer()
-		map3000[key] = value
-		b.StopTimer()
-	}
-}
-
-func BenchmarkGoMapSet10000(b *testing.B) {
-	b.ResetTimer()
-	for key, value := range Set10000 {
-		b.StartTimer()
-		map10000[key] = value
-		b.StopTimer()
-	}
-}
-
-func BenchmarkGoMapGet100(b *testing.B) {
-	for key, val := range Set100 {
-		b.StartTimer()
-		value := map100[key]
-		b.StopTimer()
-		assert.Equal(b, value, val, fmt.Sprintf("Error getting element %s from dictionary: %v", key, value))
-	}
-}
-
-func BenchmarkGoMapGet1000(b *testing.B) {
-	for key, val := range Set1000 {
-		b.StartTimer()
-		value := map1000[key]
-		b.StopTimer()
-		assert.Equal(b, value, val, fmt.Sprintf("Error getting element %s from dictionary: %v", key, value))
-	}
-}
-
-func BenchmarkGoMapGet3000(b *testing.B) {
-	for key, val := range Set3000 {
-		b.StartTimer()
-		value := map3000[key]
-		b.StopTimer()
-		assert.Equal(b, value, val, fmt.Sprintf("Error getting element %s from dictionary: %v", key, value))
-	}
-}
-
-func BenchmarkGoMapGet10000(b *testing.B) {
-	for key, val := range Set10000 {
-		b.StartTimer()
-		value := map10000[key]
-		b.StopTimer()
-		assert.Equal(b, value, val, fmt.Sprintf("Error getting element %s from dictionary: %v", key, value))
-	}
-}
-
-func BenchmarkGoMapDelete100(b *testing.B) {
-	for key := range Set100 {
-		b.StartTimer()
-		delete(map100, key)
-		b.StopTimer()
-	}
-}
-
-func BenchmarkGoMapDelete1000(b *testing.B) {
-	for key := range Set1000 {
-		b.StartTimer()
-		delete(map1000, key)
-		b.StopTimer()
-	}
-}
-
-func BenchmarkGoMapDelete3000(b *testing.B) {
-	for key := range Set3000 {
-		b.StartTimer()
-		delete(map3000, key)
-		b.StopTimer()
-	}
-}
-
-func BenchmarkGoMapDelete10000(b *testing.B) {
-	for key := range Set10000 {
-		b.StartTimer()
-		delete(map10000, key)
-		b.StopTimer()
+		for _, value := range array {
+			delete(m, value.Key)
+			if m[value.Key] != nil {
+				b.Fatalf("Error deleting element {%s} from dictionary", value.Key)
+			}
+		}
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"sync"
 
 	"github.com/dmarro89/go-redis-hashtable/utilities"
 
@@ -19,7 +18,6 @@ const (
 type Dict struct {
 	hashTables [2]*HashTable
 	rehashidx  int
-	mu         sync.Mutex
 }
 
 // NewDict returns a new instance of Dict.
@@ -138,15 +136,19 @@ func sipHashDigest(hashKey [16]byte, hexMessage string) uint64 {
 	return siphash.Hash(key0, key1, byteMessage)
 }
 
+func getHexString(key string) string {
+	hexKey := make([]byte, hex.EncodedLen(len(key)))
+	hex.Encode(hexKey, []byte(key))
+	return string(hexKey)
+}
+
 // keyIndex returns the index of the given key in the dictionary.
 //
 // It takes in a key string and randomBytes []byte as parameters.
 // It returns an integer representing the index of the key in the dictionary.
 func (d *Dict) keyIndex(key string, hashKey [16]byte) int {
 	d.expandIfNeeded()
-	var hexKey []byte
-	hex.Encode([]byte(key), hexKey)
-	hash := sipHashDigest(hashKey, string(hexKey))
+	hash := sipHashDigest(hashKey, getHexString(key))
 
 	var index int
 	for i := 0; i <= 1; i++ {
@@ -244,9 +246,7 @@ func (d *Dict) rehash(n int) {
 		for entry != nil {
 			nextEntry := entry.next
 			randomBytes := utilities.GetRandomBytes()
-			var hexKey []byte
-			hex.Encode([]byte(entry.key), hexKey)
-			idx := sipHashDigest(randomBytes, string(hexKey)) & d.rehashingTable().sizemask
+			idx := sipHashDigest(randomBytes, getHexString(entry.key)) & d.rehashingTable().sizemask
 
 			entry.next = d.rehashingTable().table[idx]
 			d.rehashingTable().table[idx] = entry
@@ -287,10 +287,7 @@ func (d *Dict) getEntry(key string) *DictEntry {
 		return nil
 	}
 
-	randomBytes := utilities.GetRandomBytes()
-	var hexKey []byte
-	hex.Encode([]byte(key), hexKey)
-	hash := sipHashDigest(randomBytes, string(hexKey))
+	hash := sipHashDigest(utilities.GetRandomBytes(), getHexString(key))
 
 	for ind, hashTable := range []*HashTable{d.mainTable(), d.rehashingTable()} {
 		if hashTable == nil || len(hashTable.table) == 0 || (ind == 1 && !d.isRehashing()) {
@@ -327,10 +324,7 @@ func (d *Dict) delete(key string) *DictEntry {
 		d.rehashStep()
 	}
 
-	randomBytes := utilities.GetRandomBytes()
-	var hexKey []byte
-	hex.Encode([]byte(key), hexKey)
-	hash := sipHashDigest(randomBytes, string(hexKey))
+	hash := sipHashDigest(utilities.GetRandomBytes(), getHexString(key))
 
 	for i, hashTable := range []*HashTable{d.mainTable(), d.rehashingTable()} {
 		if hashTable == nil || (i == 1 && !d.isRehashing()) {
