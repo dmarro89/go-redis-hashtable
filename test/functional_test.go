@@ -2,12 +2,28 @@ package test
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"testing"
 
 	"github.com/dmarro89/go-redis-hashtable/datastr"
 
 	"github.com/stretchr/testify/assert"
 )
+
+const maxStringLength = 100
+const letterBytes = "abcdefghijklmnopqrstuvwxyz"
+
+func randomString(length int) string {
+	if length == 0 {
+		length = rand.IntN(maxStringLength) + 1
+	}
+
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = letterBytes[rand.IntN(len(letterBytes))]
+	}
+	return string(b)
+}
 
 func TestSequentialOperations(t *testing.T) {
 	d := datastr.NewDict()

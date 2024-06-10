@@ -121,7 +121,6 @@ func toBytes(data uint64) string {
 }
 
 func TestSipHashDigestWithKnownVectors(t *testing.T) {
-	// Known test vectors
 	tests := []struct {
 		key     string
 		message string
@@ -157,7 +156,9 @@ func TestSipHashDigestWithKnownVectors(t *testing.T) {
 
 		var byteArray [16]byte
 		copy(byteArray[:], key)
-		result := sipHashDigest(byteArray, tt.message)
+
+		message, _ := hex.DecodeString(tt.message)
+		result := sipHashDigest(byteArray, string(message))
 		if toBytes(result) != tt.expect {
 			t.Errorf("sipHashDigest(key: %v, message: %q) = %x; want %x", tt.key, tt.message, result, tt.expect)
 		}
