@@ -3,10 +3,11 @@ package datastr
 import (
 	"encoding/binary"
 	"fmt"
-
-	"github.com/dmarro89/go-redis-hashtable/utilities"
-
+	"math/rand"
 	"github.com/dchest/siphash"
+	"sync"
+	"time"
+	"github.com/dmarro89/dare-db/logger"
 )
 
 const (
@@ -17,16 +18,23 @@ const (
 type Dict struct {
 	hashTables [2]*HashTable
 	rehashidx  int
+	rwmux sync.RWMutex
+	randomBytes [16]byte
+	once sync.Once
+	key0 uint64
+	key1 uint64
+	logger *darelog.LOG
 }
 
 // NewDict returns a new instance of Dict.
 //
 // The function does not take any parameters.
 // It returns a pointer to Dict.
-func NewDict() *Dict {
+func NewDict(logger *darelog.LOG) *Dict {
 	return &Dict{
 		hashTables: [2]*HashTable{NewHashTable(0), NewHashTable(0)},
 		rehashidx:  -1,
+		logger: logger,
 	}
 }
 
@@ -74,9 +82,14 @@ func nextPower(size int64) int64 {
 // newSize: the new size to expand the dictionary to.
 // The function does not return anything.
 func (d *Dict) expand(newSize int64) {
-	if d.isRehashing() || d.mainTable().used > newSize {
+	isrehashing := d.isRehashing()
+	istablefull := d.mainTable().used > newSize
+	if isrehashing || istablefull {
+		d.logger.Info("dict.expand return1 newSize=%d isrehashing=%t istablefull=%t", newSize, isrehashing, istablefull)
 		return
 	}
+
+	d.logger.Info("dict.expand newSize=%d isrehashing=%t istablefull=%t", newSize, isrehashing, istablefull)
 
 	nextSize := nextPower(newSize)
 	if d.mainTable().used >= nextSize {
@@ -111,9 +124,13 @@ func (d *Dict) expandIfNeeded() {
 	}
 }
 
-func split(key [16]byte) (uint64, uint64) {
+func (d *Dict) split(key [16]byte) (uint64, uint64) {
+	if len(key) == 0 || len(key) < 16 {
+		d.logger.Error("ERROR split len(key)=%d", len(key))
+		return 0, 0
+	}
 	key0 := binary.LittleEndian.Uint64(key[:8])
-	key1 := binary.LittleEndian.Uint64(key[8:])
+	key1 := binary.LittleEndian.Uint64(key[8:16])
 	return key0, key1
 }
 
@@ -125,18 +142,19 @@ func split(key [16]byte) (uint64, uint64) {
 //
 // Returns:
 // - uint64: The calculated 64-bit SipHash-2-4 digest.
-func sipHashDigest(hashKey [16]byte, message string) uint64 {
-	key0, key1 := split(hashKey)
-	return siphash.Hash(key0, key1, []byte(message))
+func (d *Dict) sipHashDigest(message string) uint64 {
+	d.logger.Debug("sipHashDigest msg='%s' key0=%d key1=%d", message, d.key0, d.key1)
+	return siphash.Hash(d.key0, d.key1, []byte(message))
 }
 
 // keyIndex returns the index of the given key in the dictionary.
 //
 // It takes in a key string and randomBytes []byte as parameters.
 // It returns an integer representing the index of the key in the dictionary.
-func (d *Dict) keyIndex(key string, hashKey [16]byte) int {
+func (d *Dict) keyIndex(key string) int {
+	d.logger.Debug("keyIndex(key=%d='%s'", len(key), key)
 	d.expandIfNeeded()
-	hash := sipHashDigest(hashKey, key)
+	hash := d.sipHashDigest(key)
 
 	var index int
 	for i := 0; i <= 1; i++ {
@@ -166,7 +184,8 @@ func (d *Dict) keyIndex(key string, hashKey [16]byte) int {
 // Returns:
 // - error: An error if the key already exists in the dictionary.
 func (d *Dict) add(key string, value interface{}) error {
-	index := d.keyIndex(key, utilities.GetRandomBytes())
+	d.logger.Debug("add(key=%d='%s' value='%#v'", len(key), key, value)
+	index := d.keyIndex(key)
 
 	if index == -1 {
 		return fmt.Errorf(`unexpectedly found an entry with the same key when trying to add #{ %s } / #{ %s }`, key, value)
@@ -233,8 +252,7 @@ func (d *Dict) rehash(n int) {
 
 		for entry != nil {
 			nextEntry := entry.next
-			randomBytes := utilities.GetRandomBytes()
-			idx := sipHashDigest(randomBytes, entry.key) & d.rehashingTable().sizemask
+			idx := d.sipHashDigest(entry.key) & d.rehashingTable().sizemask
 
 			entry.next = d.rehashingTable().table[idx]
 			d.rehashingTable().table[idx] = entry
@@ -275,7 +293,7 @@ func (d *Dict) getEntry(key string) *DictEntry {
 		return nil
 	}
 
-	hash := sipHashDigest(utilities.GetRandomBytes(), key)
+	hash := d.sipHashDigest(key)
 
 	for ind, hashTable := range []*HashTable{d.mainTable(), d.rehashingTable()} {
 		if hashTable == nil || len(hashTable.table) == 0 || (ind == 1 && !d.isRehashing()) {
@@ -303,7 +321,11 @@ func (d *Dict) getEntry(key string) *DictEntry {
 //
 // Return:
 // - *DictEntry: the deleted DictEntry if found, otherwise nil.
-func (d *Dict) delete(key string) *DictEntry {
+func (d *Dict) delete(key string, dolock bool) *DictEntry {
+	if dolock {
+		d.rwmux.Lock()
+		defer d.rwmux.Unlock()
+	}
 	if d.mainTable().used == 0 && d.rehashingTable().used == 0 {
 		return nil
 	}
@@ -312,7 +334,7 @@ func (d *Dict) delete(key string) *DictEntry {
 		d.rehashStep()
 	}
 
-	hash := sipHashDigest(utilities.GetRandomBytes(), key)
+	hash := d.sipHashDigest(key)
 
 	for i, hashTable := range []*HashTable{d.mainTable(), d.rehashingTable()} {
 		if hashTable == nil || (i == 1 && !d.isRehashing()) {
@@ -348,11 +370,14 @@ func (d *Dict) delete(key string) *DictEntry {
 // Return:
 // - interface{}: the value associated with the key, or nil if the key is not found.
 func (d *Dict) Get(key string) interface{} {
+	d.rwmux.RLock()
+	defer d.rwmux.RUnlock()
 	entry := d.getEntry(key)
 	if entry == nil {
 		return nil
 	}
-	return entry.value
+	retval := entry.value
+	return retval // copy avoids race conditions
 }
 
 // Set sets the value of a key in the dictionary.
@@ -364,12 +389,15 @@ func (d *Dict) Get(key string) interface{} {
 // Returns:
 //   - error: an error if the key already exists in the dictionary.
 func (d *Dict) Set(key string, value interface{}) error {
+	d.rwmux.Lock()
+	defer d.rwmux.Unlock()
 	entry := d.getEntry(key)
 	if entry != nil {
 		entry.value = value
 		return nil
 	}
-	return d.add(key, value)
+	retval := d.add(key, value) // copy avoids race conditions
+	return retval
 }
 
 // Delete deletes an entry from the dictionary.
@@ -380,9 +408,34 @@ func (d *Dict) Set(key string, value interface{}) error {
 // Returns:
 // - error: if the entry is not found.
 func (d *Dict) Delete(key string) error {
-	dictEntry := d.delete(key)
+	d.rwmux.Lock()
+	defer d.rwmux.Unlock()
+	dictEntry := d.delete(key, false)
 	if dictEntry == nil {
 		return fmt.Errorf(`entry not found`)
 	}
+	d.logger.Debug("deleted key='%s'", key)
 	return nil
 }
+
+
+// GenerateRandomBytes generates a fixed slice of 16 random bytes
+//
+// Parameters:
+// - none
+//
+// Returns:
+// - none
+func (d *Dict) GenerateRandomBytes() {
+	d.once.Do(func() {
+		rand.Seed(time.Now().UnixNano())
+		cs := "0123456789abcdef"
+		for i := 0; i < 16; i++ {
+			d.randomBytes[i] = cs[rand.Intn(len(cs))]
+		}
+		d.key0, d.key1 = d.split(d.randomBytes)
+	})
+}
+
+
+
