@@ -54,7 +54,7 @@ func (d *Dict) Delete(key string) error {
 	if dictEntry == nil {
 		return fmt.Errorf(`entry not found`)
 	}
-	d.logger.Debug("deleted key='%s'", key)
+	//log.Printf("deleted key='%s'", key)
 	return nil
 }
 

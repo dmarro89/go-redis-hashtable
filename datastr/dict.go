@@ -7,7 +7,6 @@ import (
 	"github.com/dchest/siphash"
 	"sync"
 	"time"
-	"github.com/dmarro89/dare-db/logger"
 )
 
 const (
@@ -23,18 +22,16 @@ type Dict struct {
 	once sync.Once
 	key0 uint64
 	key1 uint64
-	logger *darelog.LOG
 }
 
 // NewDict returns a new instance of Dict.
 //
 // The function does not take any parameters.
 // It returns a pointer to Dict.
-func NewDict(logger *darelog.LOG) *Dict {
+func NewDict() *Dict {
 	return &Dict{
 		hashTables: [2]*HashTable{NewHashTable(0), NewHashTable(0)},
 		rehashidx:  -1,
-		logger: logger,
 	}
 }
 
@@ -85,11 +82,11 @@ func (d *Dict) expand(newSize int64) {
 	isrehashing := d.isRehashing()
 	istablefull := d.mainTable().used > newSize
 	if isrehashing || istablefull {
-		d.logger.Info("dict.expand return1 newSize=%d isrehashing=%t istablefull=%t", newSize, isrehashing, istablefull)
+		//log.Printf("dict.expand return1 newSize=%d isrehashing=%t istablefull=%t", newSize, isrehashing, istablefull)
 		return
 	}
 
-	d.logger.Info("dict.expand newSize=%d isrehashing=%t istablefull=%t", newSize, isrehashing, istablefull)
+	//log.Printf("dict.expand newSize=%d isrehashing=%t istablefull=%t", newSize, isrehashing, istablefull)
 
 	nextSize := nextPower(newSize)
 	if d.mainTable().used >= nextSize {
@@ -126,7 +123,7 @@ func (d *Dict) expandIfNeeded() {
 
 func (d *Dict) split(key [16]byte) (uint64, uint64) {
 	if len(key) == 0 || len(key) < 16 {
-		d.logger.Error("ERROR split len(key)=%d", len(key))
+		//d.logger.Error("ERROR split len(key)=%d", len(key))
 		return 0, 0
 	}
 	key0 := binary.LittleEndian.Uint64(key[:8])
@@ -143,7 +140,7 @@ func (d *Dict) split(key [16]byte) (uint64, uint64) {
 // Returns:
 // - uint64: The calculated 64-bit SipHash-2-4 digest.
 func (d *Dict) sipHashDigest(message string) uint64 {
-	d.logger.Debug("sipHashDigest msg='%s' key0=%d key1=%d", message, d.key0, d.key1)
+	//log.Printf("sipHashDigest msg='%s' key0=%d key1=%d", message, d.key0, d.key1)
 	return siphash.Hash(d.key0, d.key1, []byte(message))
 }
 
@@ -152,7 +149,7 @@ func (d *Dict) sipHashDigest(message string) uint64 {
 // It takes in a key string and randomBytes []byte as parameters.
 // It returns an integer representing the index of the key in the dictionary.
 func (d *Dict) keyIndex(key string) int {
-	d.logger.Debug("keyIndex(key=%d='%s'", len(key), key)
+	//log.Printf("keyIndex(key=%d='%s'", len(key), key)
 	d.expandIfNeeded()
 	hash := d.sipHashDigest(key)
 
@@ -184,7 +181,7 @@ func (d *Dict) keyIndex(key string) int {
 // Returns:
 // - error: An error if the key already exists in the dictionary.
 func (d *Dict) add(key string, value interface{}) error {
-	d.logger.Debug("add(key=%d='%s' value='%#v'", len(key), key, value)
+	//log.Printf("add(key=%d='%s' value='%#v'", len(key), key, value)
 	index := d.keyIndex(key)
 
 	if index == -1 {
