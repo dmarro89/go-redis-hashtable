@@ -1,4 +1,4 @@
-package datastr
+package hashing
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewHasher(t *testing.T) {
-	hasher := NewHasher()
+	hasher := NewSip24Hasher().(*Sip24Hasher)
 	assert.NotNil(t, hasher, "NewHasher() should not return nil")
 
 	assert.NotEqual(t, uint64(0), hasher.key0, "NewHasher() should set key0")
@@ -16,7 +16,7 @@ func TestNewHasher(t *testing.T) {
 }
 
 func TestDigest(t *testing.T) {
-	hasher := NewHasher()
+	hasher := NewSip24Hasher().(*Sip24Hasher)
 	message := "test message"
 	expectedHash := siphash.Hash(hasher.key0, hasher.key1, []byte(message))
 
@@ -25,7 +25,7 @@ func TestDigest(t *testing.T) {
 }
 
 func TestDigestBufferReused(t *testing.T) {
-	hasher := NewHasher()
+	hasher := NewSip24Hasher()
 	message := "test message"
 
 	hasher.Digest(message)

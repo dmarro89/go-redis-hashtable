@@ -1,4 +1,4 @@
-package utilities
+package utility
 
 import (
 	"testing"

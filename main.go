@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 
-	"github.com/dmarro89/go-redis-hashtable/datastr"
+	"github.com/dmarro89/go-redis-hashtable/structure"
 )
 
 func main() {
-	database := datastr.NewDict()
+	database := structure.NewSipHashDict()
 
 	database.Set("key1", "value1")
 	database.Set("key2", "value2")

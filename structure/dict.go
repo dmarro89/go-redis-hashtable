@@ -1,7 +1,9 @@
-package datastr
+package structure
 
 import (
 	"fmt"
+
+	"github.com/dmarro89/go-redis-hashtable/hashing"
 )
 
 const (
@@ -9,21 +11,27 @@ const (
 	MAX_SIZE     = 1 << 63
 )
 
+type IDict interface {
+	Set(key string, value interface{}) error
+	Get(key string) interface{}
+	Delete(key string) error
+}
+
 type Dict struct {
 	hashTables [2]*HashTable
 	rehashidx  int
-	hasher     *Hasher
+	hasher     hashing.IHasher
 }
 
-// NewDict returns a new instance of Dict.
+// NewSipHashDict returns a new instance of Dict.
 //
 // The function does not take any parameters.
 // It returns a pointer to Dict.
-func NewDict() *Dict {
+func NewSipHashDict() IDict {
 	return &Dict{
 		hashTables: [2]*HashTable{NewHashTable(0), NewHashTable(0)},
 		rehashidx:  -1,
-		hasher:     NewHasher(),
+		hasher:     hashing.NewSip24Hasher(),
 	}
 }
 

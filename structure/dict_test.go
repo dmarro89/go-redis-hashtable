@@ -1,4 +1,4 @@
-package datastr
+package structure
 
 import (
 	"encoding/binary"
@@ -7,11 +7,12 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/dmarro89/go-redis-hashtable/hashing"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewDict(t *testing.T) {
-	d := NewDict()
+	d := NewSipHashDict().(*Dict)
 	assert.NotNil(t, d, "Failed to create a new dictionary")
 	assert.Equal(t, 2, len(d.hashTables), "Missing two hashtables")
 	assert.NotNil(t, d.mainTable(), "Failed to get the main table")
@@ -34,15 +35,14 @@ func TestRehashingTable(t *testing.T) {
 }
 
 func TestKeyIndex(t *testing.T) {
-	d := NewDict()
+	d := NewSipHashDict().(*Dict)
 	d.mainTable().table = make([]*DictEntry, 4)
 	d.mainTable().table[0] = NewDictEntry("mango", nil)
 	d.mainTable().table[0].next = NewDictEntry("orange", nil)
 
 	var hexKey []byte
 	hex.Encode([]byte("banana"), hexKey)
-	key0, key1 := split([16]byte{0, 1, 2, 3, 4})
-	d.hasher = &Hasher{key0: key0, key1: key1}
+	d.hasher = hashing.NewSip24BytesHasher([16]byte{0, 1, 2, 3, 4})
 
 	index := d.keyIndex(string(hexKey))
 	assert.Equal(t, 2, index, "Unexpected index for nonexistent key")
@@ -53,8 +53,7 @@ func TestKeyIndex(t *testing.T) {
 }
 
 func TestExpandIfNeeded(t *testing.T) {
-	d := NewDict()
-
+	d := NewSipHashDict().(*Dict)
 	// Test when rehashing is false and mainTable is nil
 	d.expandIfNeeded()
 	assert.NotNil(t, d.mainTable(), "mainTable should not be nil after first expansion")
@@ -75,7 +74,7 @@ func TestExpandIfNeeded(t *testing.T) {
 }
 
 func TestExpand(t *testing.T) {
-	d := NewDict()
+	d := NewSipHashDict().(*Dict)
 
 	// Test when rehashing is true
 	d.rehashidx = 0
@@ -161,12 +160,7 @@ func TestSipHashDigestWithKnownVectors(t *testing.T) {
 		copy(byteArray[:], key)
 
 		message, _ := hex.DecodeString(tt.message)
-		key0, key1 := split(byteArray)
-
-		hasher := &Hasher{
-			key0: key0,
-			key1: key1,
-		}
+		hasher := hashing.NewSip24BytesHasher(byteArray)
 
 		result := hasher.Digest(string(message))
 		if toBytes(result) != tt.expect {
@@ -176,7 +170,7 @@ func TestSipHashDigestWithKnownVectors(t *testing.T) {
 }
 
 func TestAdd(t *testing.T) {
-	dictionary := NewDict()
+	dictionary := NewSipHashDict().(*Dict)
 
 	key1 := "keyTest"
 	value1 := 123
@@ -209,7 +203,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestRehash(t *testing.T) {
-	d := NewDict()
+	d := NewSipHashDict().(*Dict)
 
 	//Not rehashing
 	d.rehash(1)
@@ -221,7 +215,7 @@ func TestRehash(t *testing.T) {
 	assert.Equal(t, d.rehashidx, -1)
 
 	//Rehashing last element from rehashing table
-	d = NewDict()
+	d = NewSipHashDict().(*Dict)
 	d.rehashingTable().table = make([]*DictEntry, 1)
 	d.rehashingTable().table[0] = NewDictEntry("key-test", "value-test")
 	d.add("key1", "value1")
@@ -236,7 +230,7 @@ func TestRehash(t *testing.T) {
 }
 
 func TestRehashing(t *testing.T) {
-	d := NewDict()
+	d := NewSipHashDict().(*Dict)
 
 	assert.False(t, d.isRehashing(), "Unexpected rehashing status when rehashing is false")
 	d.rehashidx = 0
@@ -245,7 +239,7 @@ func TestRehashing(t *testing.T) {
 
 func TestGetEntry(t *testing.T) {
 	// Test getEntry method
-	d := NewDict()
+	d := NewSipHashDict().(*Dict)
 
 	// Test when both tables are empty
 	entry := d.getEntry("nonexistent_key")
@@ -267,7 +261,7 @@ func TestGetEntry(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	// Test delete method
-	d := NewDict()
+	d := NewSipHashDict().(*Dict)
 
 	// Test deleting a key that does not exist
 	deletedEntry := d.delete("nonexistent_key")
@@ -282,4 +276,49 @@ func TestDelete(t *testing.T) {
 	deletedEntry = d.delete("key1")
 	assert.NotNil(t, deletedEntry, "Expected entry deleted from mainTable")
 	assert.Equal(t, "key1", deletedEntry.key, "Unexpected key in deleted entry")
+}
+
+func TestGet(t *testing.T) {
+	// Test Get method
+	d := NewSipHashDict()
+
+	// Test getting a value for a nonexistent key
+	value := d.Get("nonexistent_key")
+	assert.Nil(t, value, "Unexpected value for nonexistent key")
+
+	// Test getting a value for an existing key
+	d.Set("key1", "value1")
+	value = d.Get("key1")
+	assert.Equal(t, "value1", value, "Unexpected value for key1")
+}
+
+func TestSet(t *testing.T) {
+	// // Test Set method
+	d := NewSipHashDict()
+
+	// Test setting a value for a nonexistent key
+	d.Set("key1", "value1")
+	value := d.Get("key1")
+	assert.Equal(t, "value1", value, "Unexpected value for key1 after set")
+
+	// Test updating a value for an existing key
+	d.Set("key1", "updatedValue")
+	value = d.Get("key1")
+	assert.Equal(t, "updatedValue", value, "Unexpected value for key1 after update")
+}
+
+func TestDeleteMethod(t *testing.T) {
+	// Test Delete method
+	d := NewSipHashDict()
+
+	// Test deleting a key that does not exist
+	d.Delete("nonexistent_key")
+	value := d.Get("nonexistent_key")
+	assert.Nil(t, value, "Unexpected value for nonexistent key after delete")
+
+	// Test deleting a key
+	d.Set("key1", "value1")
+	d.Delete("key1")
+	value = d.Get("key1")
+	assert.Nil(t, value, "Unexpected value for key1 after delete")
 }

@@ -5,7 +5,7 @@ import (
 	"math/rand/v2"
 	"testing"
 
-	"github.com/dmarro89/go-redis-hashtable/datastr"
+	"github.com/dmarro89/go-redis-hashtable/structure"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -26,7 +26,7 @@ func randomString(length int) string {
 }
 
 func TestSequentialOperations(t *testing.T) {
-	d := datastr.NewDict()
+	d := structure.NewSipHashDict()
 
 	const numberOfOperations = 1000000
 

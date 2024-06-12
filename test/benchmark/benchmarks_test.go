@@ -5,7 +5,7 @@ import (
 	"math/rand/v2"
 	"testing"
 
-	"github.com/dmarro89/go-redis-hashtable/datastr"
+	"github.com/dmarro89/go-redis-hashtable/structure"
 )
 
 type keyValue struct{ Key, Value string }
@@ -54,7 +54,7 @@ func benchmarkSet(b *testing.B, n int) {
 	array := prepareArray(n)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		d := datastr.NewDict()
+		d := structure.NewSipHashDict()
 		for _, value := range array {
 			d.Set(value.Key, value.Value)
 		}
@@ -75,7 +75,7 @@ func BenchmarkGet(b *testing.B) {
 
 func benchmarkGet(b *testing.B, n int) {
 	array := prepareArray(n)
-	d := datastr.NewDict()
+	d := structure.NewSipHashDict()
 	for _, value := range array {
 		d.Set(value.Key, value.Value)
 	}
@@ -104,7 +104,7 @@ func BenchmarkDelete(b *testing.B) {
 
 func benchmarkDelete(b *testing.B, n int) {
 	array := prepareArray(n)
-	d := datastr.NewDict()
+	d := structure.NewSipHashDict()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

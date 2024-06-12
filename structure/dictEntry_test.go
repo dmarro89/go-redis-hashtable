@@ -1,4 +1,4 @@
-package datastr
+package structure
 
 import (
 	"testing"
