@@ -35,7 +35,7 @@ func generateRandomBytes() {
 // GetRandomBytes returns a slice of bytes.
 //
 // No parameters.
-// Returns []byte.
+// Returns [16]byte.
 func GetRandomBytes() [16]byte {
 	return randomBytes
 }

@@ -1,12 +1,7 @@
 package datastr
 
 import (
-	"encoding/binary"
 	"fmt"
-
-	"github.com/dmarro89/go-redis-hashtable/utilities"
-
-	"github.com/dchest/siphash"
 )
 
 const (
@@ -17,6 +12,7 @@ const (
 type Dict struct {
 	hashTables [2]*HashTable
 	rehashidx  int
+	hasher     *Hasher
 }
 
 // NewDict returns a new instance of Dict.
@@ -27,6 +23,7 @@ func NewDict() *Dict {
 	return &Dict{
 		hashTables: [2]*HashTable{NewHashTable(0), NewHashTable(0)},
 		rehashidx:  -1,
+		hasher:     NewHasher(),
 	}
 }
 
@@ -111,32 +108,13 @@ func (d *Dict) expandIfNeeded() {
 	}
 }
 
-func split(key [16]byte) (uint64, uint64) {
-	key0 := binary.LittleEndian.Uint64(key[:8])
-	key1 := binary.LittleEndian.Uint64(key[8:])
-	return key0, key1
-}
-
-// sipHashDigest calculates the SipHash-2-4 digest of the given message using the provided key.
-//
-// Parameters:
-// - key: The key used for the SipHash-2-4 algorithm. It should be a byte slice of length 16.
-// - message: The message to calculate the digest for.
-//
-// Returns:
-// - uint64: The calculated 64-bit SipHash-2-4 digest.
-func sipHashDigest(hashKey [16]byte, message string) uint64 {
-	key0, key1 := split(hashKey)
-	return siphash.Hash(key0, key1, []byte(message))
-}
-
 // keyIndex returns the index of the given key in the dictionary.
 //
 // It takes in a key string and randomBytes []byte as parameters.
 // It returns an integer representing the index of the key in the dictionary.
-func (d *Dict) keyIndex(key string, hashKey [16]byte) int {
+func (d *Dict) keyIndex(key string) int {
 	d.expandIfNeeded()
-	hash := sipHashDigest(hashKey, key)
+	hash := d.hasher.Digest(key)
 
 	var index int
 	for i := 0; i <= 1; i++ {
@@ -166,7 +144,7 @@ func (d *Dict) keyIndex(key string, hashKey [16]byte) int {
 // Returns:
 // - error: An error if the key already exists in the dictionary.
 func (d *Dict) add(key string, value interface{}) error {
-	index := d.keyIndex(key, utilities.GetRandomBytes())
+	index := d.keyIndex(key)
 
 	if index == -1 {
 		return fmt.Errorf(`unexpectedly found an entry with the same key when trying to add #{ %s } / #{ %s }`, key, value)
@@ -233,8 +211,7 @@ func (d *Dict) rehash(n int) {
 
 		for entry != nil {
 			nextEntry := entry.next
-			randomBytes := utilities.GetRandomBytes()
-			idx := sipHashDigest(randomBytes, entry.key) & d.rehashingTable().sizemask
+			idx := d.hasher.Digest(entry.key) & d.rehashingTable().sizemask
 
 			entry.next = d.rehashingTable().table[idx]
 			d.rehashingTable().table[idx] = entry
@@ -275,7 +252,7 @@ func (d *Dict) getEntry(key string) *DictEntry {
 		return nil
 	}
 
-	hash := sipHashDigest(utilities.GetRandomBytes(), key)
+	hash := d.hasher.Digest(key)
 
 	for ind, hashTable := range []*HashTable{d.mainTable(), d.rehashingTable()} {
 		if hashTable == nil || len(hashTable.table) == 0 || (ind == 1 && !d.isRehashing()) {
@@ -312,7 +289,7 @@ func (d *Dict) delete(key string) *DictEntry {
 		d.rehashStep()
 	}
 
-	hash := sipHashDigest(utilities.GetRandomBytes(), key)
+	hash := d.hasher.Digest(key)
 
 	for i, hashTable := range []*HashTable{d.mainTable(), d.rehashingTable()} {
 		if hashTable == nil || (i == 1 && !d.isRehashing()) {

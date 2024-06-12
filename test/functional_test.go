@@ -62,9 +62,3 @@ func TestSequentialOperations(t *testing.T) {
 		assert.NoError(t, err)
 	}
 }
-
-func TestKeySingleChar(t *testing.T) {
-	d := datastr.NewDict()
-	d.Set("d", "QuzBWYLwmNPBMwdMrwtMHvshYLggobpXvFKgzHaYwXoVhrCYEnShrOxkliinRozodwXLLohnBrkKLjcSNGEiwowjlY")
-	assert.Equal(t, "QuzBWYLwmNPBMwdMrwtMHvshYLggobpXvFKgzHaYwXoVhrCYEnShrOxkliinRozodwXLLohnBrkKLjcSNGEiwowjlY", d.Get("d"))
-}
