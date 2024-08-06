@@ -116,19 +116,44 @@ func main() {
 ```
 
 ## Benchmarking
+
 ### Introduction
-Benchmarking tests were conducted to evaluate the performance of the Golang Redis-like hashtable implementation in various scenarios.
+Benchmarking tests evaluate the performance of the Golang Redis-like hashtable implementation under different scenarios.
 
-The benchmark results provide insights into the execution time and resource utilization of the hashtable.
-The BenchmarkSet,BenchmarkGet and BenchmarkDelete are referring to the hashtable implementation of the project while the GoMap ones are referring to the native golang implementation.
+### Methodology
+Benchmarks are conducted for setting, getting, and deleting key-value pairs, comparing the custom hashtable implementation with Go's native `map`.
 
-| Benchmar                   | Num. Op.       |   Time               |     Mem         |     Mem.Op. |
-| -------------------------- |:--------------:|:--------------------:|:---------------:|:-----------:|
-| BenchmarkSet-4       	 	 | 17415	      | 280886 ns/op	     | 48 B/op	       | 1 allocs/op |
-| BenchmarkGet-4       	 	 | 52448	      | 161253 ns/op	     | 0 B/op	       | 0 allocs/op |
-| BenchmarkDelete-4    	 	 | 205200	      | 1133820 ns/op	     | 0 B/op	       | 0 allocs/op |
-| BenchmarkGoMapSet-4        | 1000000	      | 1255 ns/op	         | 178 B/op	       | 1 allocs/op |
-| BenchmarkGoMapGet-4        | 3147291	      | 418.1 ns/op	         | 0 B/op	       | 0 allocs/op |
-| BenchmarkGoMapDelete-4     | 2841211	      | 438.5 ns/op	         | 0 B/op	       | 0 allocs/op |
+### Results
+
+| Benchmark                   | Num. Op.       | Time (ns/op)         | Mem (B/op)       | Mem.Op.     |
+| --------------------------- |:--------------:|:--------------------:|:---------------:|:-----------:|
+| BenchmarkSet/1e1-4          | 376,755        | 2,966                | 1,072           | 28          |
+| BenchmarkSet/1e2-4          | 34,198         | 31,822               | 8,897           | 214         |
+| BenchmarkSet/1e3-4          | 3,198          | 359,923              | 83,347          | 2,021       |
+| BenchmarkGet/1e1-4          | 1,624,893      | 731.1                | 0               | 0           |
+| BenchmarkGet/1e2-4          | 168,678        | 7,205                | 0               | 0           |
+| BenchmarkGet/1e3-4          | 14,221         | 82,961               | 0               | 0           |
+| BenchmarkDelete/1e1-4       | 1,236,543      | 931.6                | 0               | 0           |
+| BenchmarkDelete/1e2-4       | 164,709        | 7,663                | 0               | 0           |
+| BenchmarkDelete/1e3-4       | 13,845         | 87,837               | 3               | 0           |
+| BenchmarkGoMapSet/1e1-4     | 1,341,274      | 950.7                | 742             | 11          |
+| BenchmarkGoMapSet/1e2-4     | 90,607         | 13,172               | 11,771          | 109         |
+| BenchmarkGoMapSet/1e3-4     | 6,398          | 172,879              | 182,490         | 1,030       |
+| BenchmarkGoMapGet/1e1-4     | 5,868,048      | 196.7                | 0               | 0           |
+| BenchmarkGoMapGet/1e2-4     | 540,874        | 2,204                | 0               | 0           |
+| BenchmarkGoMapGet/1e3-4     | 29,722         | 38,885               | 0               | 0           |
+| BenchmarkGoMapDelete/1e1-4  | 1,247,097      | 985.8                | 0               | 0           |
+| BenchmarkGoMapDelete/1e2-4  | 135,613        | 8,884                | 7               | 0           |
+| BenchmarkGoMapDelete/1e3-4  | 14,193         | 84,297               | 0               | 0           |
+
+### Explanation
+
+- **BenchmarkSet:** Measures time and memory usage for inserting elements. Performance decreases as the number of elements increases, mainly due to memory allocation and collision handling.
+- **BenchmarkGet:** Tests retrieval efficiency, showing consistent performance with minimal memory overhead.
+- **BenchmarkDelete:** Evaluates the efficiency of removing entries, demonstrating stable performance and efficient management of internal structures.
+- **Comparison with Go Maps:** 
+  - Native Go `map` shows superior performance, especially in insertion and deletion operations, due to highly optimized internal implementations.
+  - The custom hashtable implementation currently faces higher memory usage and slower operations, especially with increased elements, due to less efficient memory management and collision handling.
+  - **Optimizations in Progress:** Efforts include refining the collision resolution strategy, optimizing memory allocations, and improving dynamic resizing mechanisms to reduce overhead and increase operation speed, aiming to narrow the performance gap with Go's native `map`.
 
 
