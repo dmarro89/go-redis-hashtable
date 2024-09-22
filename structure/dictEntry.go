@@ -3,7 +3,7 @@ package structure
 type DictEntry struct {
 	next  *DictEntry
 	key   string
-	value interface{}
+	value string
 }
 
 // NewDictEntry creates a new DictEntry with the given key and value.
@@ -14,7 +14,7 @@ type DictEntry struct {
 //
 // Returns:
 // - *DictEntry: a pointer to the newly created DictEntry.
-func NewDictEntry(key string, value interface{}) *DictEntry {
+func NewDictEntry(key string, value string) *DictEntry {
 	return &DictEntry{
 		key:   key,
 		value: value,

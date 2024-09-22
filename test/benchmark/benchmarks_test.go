@@ -10,7 +10,7 @@ import (
 
 type keyValue struct{ Key, Value string }
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyz"
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const maxStringLength = 100
 
 func randomString(length int) string {
@@ -29,9 +29,9 @@ func prepareArray(n int) []keyValue {
 	arr := make([]keyValue, 0, n)
 	existing := make(map[string]bool)
 	for i := 0; i < n; i++ {
-		key := randomString(0)
+		key := randomString(20)
 		for existing[key] {
-			key = randomString(0)
+			key = randomString(20)
 		}
 		existing[key] = true
 		arr = append(arr, keyValue{key, randomString(0)})
