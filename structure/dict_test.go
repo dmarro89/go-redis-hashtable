@@ -37,12 +37,17 @@ func TestRehashingTable(t *testing.T) {
 func TestKeyIndex(t *testing.T) {
 	d := NewSipHashDict().(*Dict)
 	d.mainTable().table = make([]*DictEntry, 4)
-	d.mainTable().table[0] = NewDictEntry("mango", nil)
-	d.mainTable().table[0].next = NewDictEntry("orange", nil)
+	d.mainTable().table[0] = NewDictEntry("mango", "")
+	d.mainTable().table[0].next = NewDictEntry("orange", "")
 
 	var hexKey []byte
 	hex.Encode([]byte("banana"), hexKey)
-	d.hasher = hashing.NewSip24BytesHasher([16]byte{0, 1, 2, 3, 4})
+
+	key0, key1 := hashing.Split([16]byte{0, 1, 2, 3, 4})
+	d.hasher = &hashing.Sip24Hasher{
+		Key0: key0,
+		Key1: key1,
+	}
 
 	index := d.keyIndex(string(hexKey))
 	assert.Equal(t, 2, index, "Unexpected index for nonexistent key")
@@ -160,7 +165,11 @@ func TestSipHashDigestWithKnownVectors(t *testing.T) {
 		copy(byteArray[:], key)
 
 		message, _ := hex.DecodeString(tt.message)
-		hasher := hashing.NewSip24BytesHasher(byteArray)
+		key0, key1 := hashing.Split(byteArray)
+		hasher := hashing.Sip24Hasher{
+			Key0: key0,
+			Key1: key1,
+		}
 
 		result := hasher.Digest(string(message))
 		if toBytes(result) != tt.expect {
@@ -173,7 +182,7 @@ func TestAdd(t *testing.T) {
 	dictionary := NewSipHashDict().(*Dict)
 
 	key1 := "keyTest"
-	value1 := 123
+	value1 := "123"
 	err := dictionary.add(key1, value1)
 	assert.NoError(t, err, "Unexpected error adding a new key")
 
@@ -192,7 +201,7 @@ func TestAdd(t *testing.T) {
 	// Adding more entries for rehashing test
 	for i := 0; i < 4; i++ {
 		key := fmt.Sprintf("key%d", i)
-		value := rand.Intn(100)
+		value := fmt.Sprintf("%d", rand.Intn(100))
 		err := dictionary.add(key, value)
 		assert.NoError(t, err, "Unexpected error adding a new key")
 
@@ -284,7 +293,7 @@ func TestGet(t *testing.T) {
 
 	// Test getting a value for a nonexistent key
 	value := d.Get("nonexistent_key")
-	assert.Nil(t, value, "Unexpected value for nonexistent key")
+	assert.Equal(t, value, "", "Unexpected value for nonexistent key")
 
 	// Test getting a value for an existing key
 	d.Set("key1", "value1")
@@ -314,11 +323,11 @@ func TestDeleteMethod(t *testing.T) {
 	// Test deleting a key that does not exist
 	d.Delete("nonexistent_key")
 	value := d.Get("nonexistent_key")
-	assert.Nil(t, value, "Unexpected value for nonexistent key after delete")
+	assert.Equal(t, value, "", "Unexpected value for nonexistent key after delete")
 
 	// Test deleting a key
 	d.Set("key1", "value1")
 	d.Delete("key1")
 	value = d.Get("key1")
-	assert.Nil(t, value, "Unexpected value for key1 after delete")
+	assert.Equal(t, value, "", "Unexpected value for key1 after delete")
 }

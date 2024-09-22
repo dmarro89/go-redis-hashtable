@@ -49,7 +49,7 @@ func TestSequentialOperations(t *testing.T) {
 	// Verify the retrieval of N non-existent elements
 	for i := 0; i < numberOfOperations; i++ {
 		key := fmt.Sprintf("nonexistent%d", i)
-		assert.Nil(t, d.Get(key))
+		assert.Equal(t, "", d.Get(key))
 	}
 
 	for key, expectedValue := range insertedElements {

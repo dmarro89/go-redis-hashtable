@@ -125,35 +125,40 @@ Benchmarks are conducted for setting, getting, and deleting key-value pairs, com
 
 ### Results
 
-| Benchmark                   | Num. Op.       | Time (ns/op)         | Mem (B/op)       | Mem.Op.     |
-| --------------------------- |:--------------:|:--------------------:|:---------------:|:-----------:|
-| BenchmarkSet/1e1-4          | 376,755        | 2,966                | 1,072           | 28          |
-| BenchmarkSet/1e2-4          | 34,198         | 31,822               | 8,897           | 214         |
-| BenchmarkSet/1e3-4          | 3,198          | 359,923              | 83,347          | 2,021       |
-| BenchmarkGet/1e1-4          | 1,624,893      | 731.1                | 0               | 0           |
-| BenchmarkGet/1e2-4          | 168,678        | 7,205                | 0               | 0           |
-| BenchmarkGet/1e3-4          | 14,221         | 82,961               | 0               | 0           |
-| BenchmarkDelete/1e1-4       | 1,236,543      | 931.6                | 0               | 0           |
-| BenchmarkDelete/1e2-4       | 164,709        | 7,663                | 0               | 0           |
-| BenchmarkDelete/1e3-4       | 13,845         | 87,837               | 3               | 0           |
-| BenchmarkGoMapSet/1e1-4     | 1,341,274      | 950.7                | 742             | 11          |
-| BenchmarkGoMapSet/1e2-4     | 90,607         | 13,172               | 11,771          | 109         |
-| BenchmarkGoMapSet/1e3-4     | 6,398          | 172,879              | 182,490         | 1,030       |
-| BenchmarkGoMapGet/1e1-4     | 5,868,048      | 196.7                | 0               | 0           |
-| BenchmarkGoMapGet/1e2-4     | 540,874        | 2,204                | 0               | 0           |
-| BenchmarkGoMapGet/1e3-4     | 29,722         | 38,885               | 0               | 0           |
-| BenchmarkGoMapDelete/1e1-4  | 1,247,097      | 985.8                | 0               | 0           |
-| BenchmarkGoMapDelete/1e2-4  | 135,613        | 8,884                | 7               | 0           |
-| BenchmarkGoMapDelete/1e3-4  | 14,193         | 84,297               | 0               | 0           |
+| Benchmark                |   Num. Op. |   Time (ns/op) |   Mem (B/op) |   Mem.Op. |
+|:-------------------------|-----------:|---------------:|-------------:|----------:|
+| BenchmarkSet/1e1-4        |     563031 |           1948 |          896 |        17 |
+| BenchmarkSet/1e2-4        |      60679 |          19587 |         7280 |       113 |
+| BenchmarkSet/1e3-4        |       5817 |         194971 |        67312 |      1020 |
+| BenchmarkGet/1e1-4        |    2811422 |           426.4|             0|         0 |
+| BenchmarkGet/1e2-4        |     258082 |           4635 |             0|         0 |
+| BenchmarkGet/1e3-4        |      24170 |          48600 |             0|         0 |
+| BenchmarkDelete/1e1-4     |    1951491 |           660.7|             0|         0 |
+| BenchmarkDelete/1e2-4     |     237284 |           5001 |             0|         0 |
+| BenchmarkDelete/1e3-4     |      22318 |          53780 |             0|         0 |
+| BenchmarkGoMapSet/1e1-4   |    1357090 |           884.9|           742|        11 |
+| BenchmarkGoMapSet/1e2-4   |     103054 |          11401 |         11772|       109 |
+| BenchmarkGoMapSet/1e3-4   |       7419 |         145960 |        182496|      1030 |
+| BenchmarkGoMapGet/1e1-4   |    6300027 |           188.9|             0|         0 |
+| BenchmarkGoMapGet/1e2-4   |     484138 |           2153 |             0|         0 |
+| BenchmarkGoMapGet/1e3-4   |      38877 |          30688 |             0|         0 |
+| BenchmarkGoMapDelete/1e1-4|    1498592 |           785.0|             0|         0 |
+| BenchmarkGoMapDelete/1e2-4|     158318 |           7546 |             7|         0 |
+| BenchmarkGoMapDelete/1e3-4|      15902 |          75495 |             0|         0 |
+
 
 ### Explanation
 
-- **BenchmarkSet:** Measures time and memory usage for inserting elements. Performance decreases as the number of elements increases, mainly due to memory allocation and collision handling.
-- **BenchmarkGet:** Tests retrieval efficiency, showing consistent performance with minimal memory overhead.
-- **BenchmarkDelete:** Evaluates the efficiency of removing entries, demonstrating stable performance and efficient management of internal structures.
-- **Comparison with Go Maps:** 
-  - Native Go `map` shows superior performance, especially in insertion and deletion operations, due to highly optimized internal implementations.
-  - The custom hashtable implementation currently faces higher memory usage and slower operations, especially with increased elements, due to less efficient memory management and collision handling.
-  - **Optimizations in Progress:** Efforts include refining the collision resolution strategy, optimizing memory allocations, and improving dynamic resizing mechanisms to reduce overhead and increase operation speed, aiming to narrow the performance gap with Go's native `map`.
+### Analysis
+
+From the benchmark results, we observe the following:
+
+- **Insertion (`BenchmarkSet` vs `BenchmarkGoMapSet`)**: The Go Native `map` consistently outperforms the custom hashtable, especially as the number of elements increases. This is due to the highly optimized handling of memory allocations and hash collisions in the Go Native Map.
+- **Retrieval (`Get`)**: The performance difference for retrievals is more moderate, but the Go Native `map` remains faster due to efficient key lookups.
+- **Deletion (`Delete`)**: Deletions in the custom hashtable are faster with smaller data sets, but as the number of elements grows, the Go Native `map` starts to outperform.
+
+### Conclusion
+While the Custom Hashtable provides a functional alternative to Go's native implementation, it is evident that the Go Native `map` are more efficient, particularly for large data sets. The native maps benefit from extensive optimizations at the runtime level, which results in better memory usage, faster lookups, and more efficient collision handling.
+This project is a work in progress, so there are constant iterations providing optimization for the data structure.
 
 

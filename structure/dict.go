@@ -12,8 +12,8 @@ const (
 )
 
 type IDict interface {
-	Set(key string, value interface{}) error
-	Get(key string) interface{}
+	Set(key string, value string) error
+	Get(key string) string
 	Delete(key string) error
 }
 
@@ -151,7 +151,7 @@ func (d *Dict) keyIndex(key string) int {
 //
 // Returns:
 // - error: An error if the key already exists in the dictionary.
-func (d *Dict) add(key string, value interface{}) error {
+func (d *Dict) add(key string, value string) error {
 	index := d.keyIndex(key)
 
 	if index == -1 {
@@ -332,10 +332,10 @@ func (d *Dict) delete(key string) *DictEntry {
 //
 // Return:
 // - interface{}: the value associated with the key, or nil if the key is not found.
-func (d *Dict) Get(key string) interface{} {
+func (d *Dict) Get(key string) string {
 	entry := d.getEntry(key)
 	if entry == nil {
-		return nil
+		return ""
 	}
 	return entry.value
 }
@@ -348,7 +348,7 @@ func (d *Dict) Get(key string) interface{} {
 //
 // Returns:
 //   - error: an error if the key already exists in the dictionary.
-func (d *Dict) Set(key string, value interface{}) error {
+func (d *Dict) Set(key string, value string) error {
 	entry := d.getEntry(key)
 	if entry != nil {
 		entry.value = value

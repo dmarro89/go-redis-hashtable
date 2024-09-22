@@ -2,7 +2,6 @@ package hashing
 
 import (
 	"encoding/binary"
-	"sync"
 
 	"github.com/dchest/siphash"
 	"github.com/dmarro89/go-redis-hashtable/utility"
@@ -13,50 +12,19 @@ type IHasher interface {
 }
 
 type Sip24Hasher struct {
-	key0 uint64
-	key1 uint64
+	Key0 uint64
+	Key1 uint64
 }
 
-var customPool = sync.Pool{
-	New: func() interface{} {
-		buf := make([]byte, 0, 256)
-		return &buf
-	},
-}
+var key0, key1 = Split(utility.GetRandomBytes())
+var globalSip24Hasher = &Sip24Hasher{Key0: key0, Key1: key1}
 
 func NewSip24Hasher() IHasher {
-	key0, key1 := Split(utility.GetRandomBytes())
-	return &Sip24Hasher{
-		key0: key0,
-		key1: key1,
-	}
-}
-
-func NewSip24BytesHasher(arr [16]byte) IHasher {
-	key0, key1 := Split(arr)
-	return &Sip24Hasher{
-		key0: key0,
-		key1: key1,
-	}
+	return globalSip24Hasher
 }
 
 func (h *Sip24Hasher) Digest(message string) uint64 {
-	bufPtr := customPool.Get().(*[]byte)
-	buf := *bufPtr
-
-	if cap(buf) < len(message) {
-		buf = make([]byte, len(message))
-	} else {
-		buf = buf[:len(message)]
-	}
-
-	copy(buf, message)
-
-	hash := siphash.Hash(h.key0, h.key1, buf)
-
-	customPool.Put(bufPtr)
-
-	return hash
+	return siphash.Hash(h.Key0, h.Key1, []byte(message))
 }
 
 func Split(key [16]byte) (uint64, uint64) {
