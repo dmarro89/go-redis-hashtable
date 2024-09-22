@@ -151,14 +151,15 @@ Benchmarks are conducted for setting, getting, and deleting key-value pairs, com
 
 ### Analysis
 
-From the benchmark results, we observe the following:
+From the benchmark results (you can take a look also at the [actions](https://github.com/dmarro89/go-redis-hashtable/actions/workflows/go-main.yml)), we observe the following:
 
-- **Insertion (`BenchmarkSet` vs `BenchmarkGoMapSet`)**: The Go Native `map` consistently outperforms the custom hashtable, especially as the number of elements increases. This is due to the highly optimized handling of memory allocations and hash collisions in the Go Native Map.
-- **Retrieval (`Get`)**: The performance difference for retrievals is more moderate, but the Go Native `map` remains faster due to efficient key lookups.
-- **Deletion (`Delete`)**: Deletions in the custom hashtable are faster with smaller data sets, but as the number of elements grows, the Go Native `map` starts to outperform.
+- **Insertion (`BenchmarkSet` vs `BenchmarkGoMapSet`)**: The Go Native `map` consistently outperforms the custom hashtable in terms of Time. For the memory consumption, the custom hash table performs better (so less memory consumed for operation) when the dataset dimension increases.
+- **Retrieval (`BenchmarkGet` vs `BenchmarkGoMapGet`)**: The performance difference for retrievals is more moderate, but the Go Native `map` remains faster in terms of time (about the double of time) due to efficient key lookups.
+- **Deletion (`BenchmarkDelete` vs `BenchmarkGoMapDelete`)**: Deletions in the custom hashtable are faster compared the Go Native `map` - both are consumin no memory for operation.
 
 ### Conclusion
-While the Custom Hashtable provides a functional alternative to Go's native implementation, it is evident that the Go Native `map` are more efficient, particularly for large data sets. The native maps benefit from extensive optimizations at the runtime level, which results in better memory usage, faster lookups, and more efficient collision handling.
-This project is a work in progress, so there are constant iterations providing optimization for the data structure.
+While the Custom Hashtable provides a functional alternative to Go's native implementation, it is evident that the Go Native `map` in some cases are more efficient, particularly for large data sets.
+This project is a work in progress, so there are constant iterations providing optimization for the data structure. 
+Star the project and keep updated!
 
 
