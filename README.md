@@ -73,14 +73,17 @@ The `Delete` operation removes an entry from the hashtable based on the specifie
 
 Initially, each hashtable starts with a small size (4). Upon exceeding this size, the main hashtable undergoes expansion. The expansion involves using a rehashing table, which is twice the size of the mainTable. Linked lists are transferred to the expanded table during this process. Once migration is complete, the rehashing table becomes the main table, and the rehashing table is reset as an empty one
 
+**New Operation**:  
+The `GetAllItems()` operation retrieves all key-value pairs stored in the hash table. It iterates through both the main and rehashing tables (if rehashing is in progress), collecting all the key-value pairs.
+
 ## Usage
 
 ### Getting Started
 
 To use this hashtable implementation, follow these steps:
 
-1. Import the `datastructures` package.
-2. Create a new `Dict` instance using `NewDict()`.
+1. Import the `structure` package.
+2. Create a new `Dict` instance using `NewSipHashDict()`.
 3. Use the provided methods for adding, retrieving, and deleting key-value pairs.
 
 ### Example
@@ -90,12 +93,12 @@ package main
 
 import (
 	"fmt"
-	"go_db/datastructures"
+	"github.com/dmarro89/go-redis-hashtable/structure"
 )
 
 func main() {
 	// Create a new hashtable
-	myDict := datastructures.NewDict()
+	myDict := structure.NewSipHashDict()
 
 	// Add key-value pairs
 	err := myDict.Set("key1", "value1")
@@ -107,11 +110,16 @@ func main() {
 	result := myDict.Get("key1")
 	fmt.Println("Value for key1:", result)
 
+	// Retrieve all key-value pairs
+	items := myDict.GetAllItems()
+	fmt.Println("All items:", items)
+
 	// Delete an entry
 	err = myDict.Delete("key1")
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
+
 }
 ```
 

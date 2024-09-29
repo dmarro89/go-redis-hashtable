@@ -331,3 +331,64 @@ func TestDeleteMethod(t *testing.T) {
 	value = d.Get("key1")
 	assert.Equal(t, value, "", "Unexpected value for key1 after delete")
 }
+
+func TestGetAllItems_EmptyDict(t *testing.T) {
+	dict := NewSipHashDict() // Assuming NewDict() initializes the hash tables
+
+	items := dict.GetAllItems()
+
+	assert.Equal(t, 0, len(items), "Expected no items in an empty dictionary")
+}
+
+func TestGetAllItems_SingleEntry(t *testing.T) {
+	dict := NewSipHashDict()
+
+	// Set a single key-value pair
+	dict.Set("key1", "value1")
+
+	items := dict.GetAllItems()
+
+	expectedItems := map[string]string{
+		"key1": "value1",
+	}
+
+	assert.Equal(t, expectedItems, items, "Expected one key-value pair in the dictionary")
+}
+
+func TestGetAllItems_MultipleEntries(t *testing.T) {
+	dict := NewSipHashDict()
+
+	// Set multiple key-value pairs
+	dict.Set("key1", "value1")
+	dict.Set("key2", "value2")
+	dict.Set("key3", "value3")
+
+	items := dict.GetAllItems()
+
+	expectedItems := map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+		"key3": "value3",
+	}
+
+	assert.Equal(t, expectedItems, items, "Expected multiple key-value pairs in the dictionary")
+}
+
+func TestGetAllItems_Rehashing(t *testing.T) {
+	dict := NewSipHashDict()
+
+	// Simulate rehashing by inserting enough elements to trigger dynamic resizing
+	for i := 1; i <= 100; i++ {
+		dict.Set(fmt.Sprintf("key%d", i), fmt.Sprintf("value%d", i))
+	}
+
+	items := dict.GetAllItems()
+
+	// Check that all items were retrieved correctly
+	for i := 1; i <= 100; i++ {
+		key := fmt.Sprintf("key%d", i)
+		value, exists := items[key]
+		assert.True(t, exists, "Expected key %s to exist", key)
+		assert.Equal(t, fmt.Sprintf("value%d", i), value, "Expected correct value for key %s", key)
+	}
+}

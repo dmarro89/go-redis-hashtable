@@ -16,6 +16,8 @@ func init() {
 	generateRandomBytes()
 }
 
+var errorBytes = `error generating random bytes`
+
 // generateRandomBytes generates a slice of random bytes with the given length.
 //
 // Parameters:
@@ -27,7 +29,7 @@ func generateRandomBytes() {
 	once.Do(func() {
 		_, err := rand.Read(randomBytes[:])
 		if err != nil {
-			panic(`error generating random bytes`)
+			panic(errorBytes)
 		}
 	})
 }

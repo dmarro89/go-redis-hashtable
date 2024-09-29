@@ -15,6 +15,7 @@ type IDict interface {
 	Set(key string, value string) error
 	Get(key string) string
 	Delete(key string) error
+	GetAllItems() map[string]string
 }
 
 type Dict struct {
@@ -370,4 +371,29 @@ func (d *Dict) Delete(key string) error {
 		return fmt.Errorf(`entry not found`)
 	}
 	return nil
+}
+
+// GetAllKeys retrieves all keys from the hash table.
+// It iterates over both hash tables in the Dict struct (main table and rehashing table).
+// Each bucket may contain a linked list of entries (DictEntry) due to hash collisions,
+// so it traverses through these linked lists to collect all keys.
+// This function supports the dynamic resizing and rehashing mechanism.
+func (d *Dict) GetAllItems() map[string]string {
+	items := make(map[string]string)
+
+	// Iterate over both hash tables (HashTable[2])
+	for _, hashtable := range d.hashTables {
+		if hashtable != nil {
+			// Iterate through each bucket in the hash table
+			for _, entry := range hashtable.table {
+				// Traverse the linked list at each index to get all keys
+				for entry != nil {
+					items[entry.key] = entry.value
+					entry = entry.next
+				}
+			}
+		}
+	}
+
+	return items
 }
