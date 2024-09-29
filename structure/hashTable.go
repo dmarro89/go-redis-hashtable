@@ -7,8 +7,6 @@ type HashTable struct {
 	used     int64
 }
 
-var errHashTableSize = "hashTable size cannot be negative"
-
 // NewHashTable creates a new HashTable with the specified size.
 //
 // Parameters:
@@ -17,14 +15,17 @@ var errHashTableSize = "hashTable size cannot be negative"
 // Returns:
 // - *HashTable: a pointer to the newly created HashTable.
 func NewHashTable(size int64) *HashTable {
-	if size < 0 {
-		panic(errHashTableSize)
+	var sizemask uint64
+	table := []*DictEntry{}
+	if size > 0 {
+		table = make([]*DictEntry, size)
+		sizemask = uint64(size - 1)
 	}
 
 	return &HashTable{
-		table:    make([]*DictEntry, size),
+		table:    table,
 		size:     size,
-		sizemask: uint64(size - 1),
+		sizemask: sizemask,
 	}
 }
 
